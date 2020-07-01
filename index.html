@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Shogi View</title>
+<script src="https://unpkg.com/vue"></script>
+</head>
+<body>
+
+<template id="piece">
+  <svg width="30" height="30" viewBox="0 0 30 30">
+    <g :transform="reverse">
+      <text x="50%" y="0" font-size="30"
+        dominant-baseline="central"
+        writing-mode="tb"
+        :font-weight="fontWeight"
+        :transform="fontScale"
+        :fill="fontColor">{{name}}</text>
+    </g>
+  </svg>
+</template>
+
+<script>
+const Piece = {
+  template: '#piece',
+  props: {
+    name: String,
+    isReversed: Boolean,
+    isEmphasis: Boolean
+  },
+  computed: {
+    reverse () {
+      if (this.isReversed) {
+        return 'rotate(180) translate(-30, -30)'
+      } else {
+        return ''
+      }
+    },
+    fontScale () {
+      if (this.name.length > 0) {
+        return `scale(1, ${1 / this.name.length})`
+      } else {
+        return ''
+      }
+    },
+    fontColor () {
+      if (this.isEmphasis) {
+        //return '#fff'
+        return '#000'
+      } else {
+        return '#000'
+      }
+    },
+    fontWeight () {
+      if (this.isEmphasis) {
+        return 'bold'
+      } else {
+        return 'normal'
+      }
+    }
+  }
+}
+</script>
+
+<style>
+.board {
+  display: grid;
+  grid-template-columns: repeat(11, max-content);
+  grid-template-rows: repeat(11, max-content);
+}
+.topaxis {
+  grid-area: 1 / 2 / 1 / 10;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  align-items: center;
+  justify-items: center;
+}
+.rightaxis {
+  grid-area: 2 / 11 / 10 / 11;
+  display: grid;
+  grid-template-rows: repeat(9, 1fr);
+  align-items: center;
+  justify-items: center;
+}
+.bottomaxis {
+  grid-area: 11 / 2 / 11 / 10;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  align-items: center;
+  justify-items: center;
+}
+.leftaxis {
+  grid-area: 2 / 1 / 10 / 1;
+  display: grid;
+  grid-template-rows: repeat(9, 1fr);
+  align-items: center;
+  justify-items: center;
+}
+.square {
+  grid-area: 2 / 2 / 10 / 10;
+  display: grid;
+  width: min-content;
+  grid-template-columns: repeat(9, min-content);
+  column-gap: 0px;
+  row-gap: 0px;
+  border: 2px solid #333;
+}
+.item {
+  padding: 5px;
+  border: 1px solid #ccc;
+}
+.axis {
+  padding: 5px;
+}
+.lastmovesrc {
+  background-color: #e0ffff;
+}
+.lastmove {
+  background-color: #e0ffff;
+}
+</style>
+
+<template id="square">
+  <div class="board">
+    <div v-show="topAxis" class="topaxis">
+      <div v-for="file in fileAxis" class="axis">
+        {{ file }}
+      </div>
+    </div>
+    <div class="bottomaxis">
+      <div v-for="file in fileAxis" class="axis">
+        <div v-show="bottomAxis">{{ file }}</div>
+      </div>
+    </div>
+    <div class="leftaxis">
+      <div v-for="rank in rankAxis" class="axis">
+        <div v-show="leftAxis">{{ rank }}</div>
+      </div>
+    </div>
+    <div v-show="rightAxis" class="rightaxis">
+      <div v-for="rank in rankAxis" class="axis">
+        {{ rank }}
+      </div>
+    </div>
+    <div class="square">
+      <div v-for="p in position" class="item" :class="p | squareBgClass">
+        <piece :name="p.name" :is-reversed="p | isReversed"
+          :is-emphasis="p.isLast"></piece>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+const Square = {
+  template: '#square',
+  components: {
+    Piece
+  },
+  props: {
+    position: Array
+  },
+  computed: {
+    fileAxis() {
+      return [9, 8, 7, 6, 5, 4, 3, 2, 1]
+    },
+    rankAxis() {
+      return ['一', '二', '三', '四', '五', '六', '七', '八', '九']
+    },
+    topAxis() {
+      return true
+    },
+    rightAxis() {
+      return true
+    },
+    bottomAxis() {
+      return false
+    },
+    leftAxis() {
+      return false
+    }
+  },
+  filters: {
+    isReversed(p) {
+      return p.color == 'white'
+    },
+    squareBgClass(p) {
+      if (p.isLast) {
+        return 'lastmove'
+      } else if (p.isLastSrc) {
+        return 'lastmovesrc'
+      } else {
+        return ''
+      }
+    },
+  }
+}
+</script>
+
+<style>
+.color {
+  padding-bottom: 1em;
+}
+</style>
+
+<template id="inhand">
+  <div>
+    <span class="color">{{ mark }}</span>
+    <span v-if="isEmpty">なし</span>
+    <template v-for="p in pieces">
+      {{ count(p) }}
+    </template>
+  </div>
+</template>
+
+<script>
+const InHand = {
+  template: '#inhand',
+  props: {
+    color: String,
+    pieces: Array
+  },
+  computed: {
+    mark() {
+      if (this.color == "black") {
+        return "☗先手"
+      } else {
+        return "☖後手"
+      }
+    },
+    isEmpty() {
+      for (p of this.pieces) {
+        if (p.num > 0) {
+          return false
+        }
+      }
+      return true
+    }
+  },
+  methods: {
+    count(p) {
+      if (p.num == 0) {
+        return ''
+      }
+      let s = p.name
+      if (p.num > 1) {
+        s += [
+          '', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十',
+          '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八'
+        ][p.num]
+      }
+      return s
+    }
+  }
+}
+</script>
+
+<style>
+.movelog {
+  margin: 0;
+  padding: 0;
+  width: max-content;
+  height: 32rem;
+  overflow-y: scroll;
+  border: 1px solid #888;
+}
+
+.movelog table {
+  border-collapse: collapse;
+}
+
+.movelog td {
+  margin: 0;
+  padding: 5px;
+  font-size: 12pt;
+}
+
+.step {
+  text-align: right;
+}
+
+.selected {
+  background-color: #e0ffff;
+}
+</style>
+
+<template id="movelog">
+  <div class="movelog">
+    <table>
+      <tr v-for="(move, step) in movelog.data"
+          @click="select(step)"
+          :class="selected(step)"
+          ref="step">
+        <td class="step">{{ step }}</td>
+        <td class="move">{{ move | format }}</td>
+      </tr>
+    </table>
+  </div>
+</template>
+
+<script>
+const Movelog = {
+  template: '#movelog',
+  props: {
+    movelog: Object,
+    currentStep: Number
+  },
+  methods: {
+    select(step) {
+      this.$emit('select', step)
+    },
+    selected(step) {
+      if (step === this.currentStep) {
+        if (this.$refs.step) {
+          element = this.$refs.step[this.currentStep]
+          element.scrollIntoView({block: 'nearest', inline: 'nearest'})
+        }
+        return 'selected'
+      } else {
+        return ''
+      }
+    }
+  },
+  filters: {
+    format(move) {
+      if (move === null) {
+        return '開始局面'
+      }
+      const fileName = {
+        1: '1', 2: '2', 3: '3', 4: '4', 5: '5',
+        6: '6', 7: '7', 8: '8', 9: '9'
+      }
+      const rankName = {
+        1: '一', 2: '二', 3: '三', 4: '四', 5: '五',
+        6: '六', 7: '七', 8: '八', 9: '九'
+      }
+      const pieceTypeName = {
+        'P': '歩',
+        'L': '香',
+        'N': '桂',
+        'S': '銀',
+        'G': '金',
+        'B': '角',
+        'R': '飛',
+        'K': '玉',
+        '+P': 'と',
+        '+L': '成香',
+        '+N': '成桂',
+        '+S': '成銀',
+        '+B': '馬',
+        '+R': '竜'
+      }
+      let s = ''
+      if (move.color === 'black') {
+        s += '☗'
+      } else {
+        s += '☖'
+      }
+      s += fileName[move.dst.file]
+      s += rankName[move.dst.rank]
+      s += pieceTypeName[move.pieceType.ident]
+      if (move.isPromote()) {
+        s += '成'
+      }
+      if (move.isDrop()) {
+        s += '打'
+      } else {
+        s += '(' + move.src.file + move.src.rank + ')'
+      }
+      return s
+    }
+  }
+}
+</script>
+
+<style>
+.container {
+  display: grid;
+  width: max-content;
+  grid-gap: 1rem;
+  grid-template: "title title title movelog kif"
+  "inhand-left board inhand-right movelog kif"
+  ". controll . movelog kif";
+}
+.title {
+  grid-area: title;
+  justify-self: center;
+  font-size: 16pt;
+}
+.inhand-left {
+  padding-bottom: 12pt;
+  grid-area: inhand-left;
+  align-self: start;
+  font-size: 16pt;
+  writing-mode: vertical-rl;
+}
+.inhand-right {
+  padding-bottom: 12pt;
+  grid-area: inhand-right;
+  align-self: end;
+  font-size: 16pt;
+  writing-mode: vertical-rl;
+}
+.board {
+  height: max-content;
+  grid-area: board;
+  text-align: center;
+  border-collapse: collapse;
+}
+.movelog {
+  grid-area: movelog;
+}
+.control {
+  grid-area: controll;
+  justify-self: center;
+}
+.kif {
+  grid-area: kif;
+}
+.step {
+  padding: 5px;
+  display: inline-block;
+  width: 3rem;
+  text-align: center;
+}
+.button {
+  margin: 0;
+  padding: 5px;
+  font-size: 14pt;
+  font-weight: bold;
+  width: 2em;
+  height: 2em;
+  text-align: center;
+  color: #000;
+  background-color: #eee;
+  border-radius: 50%;
+  #border-style: none;
+  border: 1px solid #888;
+  filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.4));
+}
+.button:active {
+  transform: translateY(2px);
+  filter: none;
+}
+.reversed {
+  transform: rotate(180deg);
+}
+</style>
+
+<div id="app">
+  <div class="container">
+    <!-- div class="title">【{{ title }}】</div -->
+    <div class="title"></div>
+    <in-hand class="inhand-left reversed" color="white" :pieces="whitePieces()"></in-hand>
+    <square class="board" :position="pos"></square>
+    <in-hand class="inhand-right" color="black" :pieces="blackPieces()"></in-hand>
+    <movelog class="movelog" :movelog="movelog" :current-step="step" @select="at"></movelog>
+    <div class="control">
+      <button class="button" @click="back">&lt;</button>
+      <span class="step">{{ step }}</span>
+      <button class="button" @click="forward">&gt;</button>
+    </div>
+    <div class="kif">
+      <textarea v-model="kif" cols="50" rows="30"></textarea>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import shogi from './js/shogi.js'
+import sfen from './js/sfen.js'
+import psn from './js/psn.js'
+new Vue({
+  el: '#app',
+  components: {
+    Square,
+    InHand,
+    Movelog
+  },
+  data: {
+    sfen: '',
+    kif: '',
+    position: {},
+    movelog: {}
+  },
+  computed: {
+    title() {
+      if (this.step === 0) {
+        return '開始局面'
+      }
+      const move = this.movelog.data[this.step]
+      return '図は' + 'まで'
+    },
+    step() {
+      return this.position.step
+    },
+    lastMove() {
+      const move = this.movelog.data[this.step]
+      if (!move) {
+        return null
+      }
+      return move
+    },
+    pos() {
+      let data = []
+      const last = this.lastMove
+      for (let rank = 1; rank <= this.position.nRanks; rank++) {
+        for (let file = this.position.nFiles; file >= 1; file--) {
+          const coords = new shogi.Coords(file, rank)
+          const piece = this.position.getSquare(coords)
+          const pieceTypeNameMap = {
+            'P': '歩',
+            'L': '香',
+            'N': '桂',
+            'S': '銀',
+            'G': '金',
+            'B': '角',
+            'R': '飛',
+            'K': '玉',
+            '+P': 'と',
+            '+L': '成香',
+            '+N': '成桂',
+            '+S': '成銀',
+            '+B': '馬',
+            '+R': '龍'
+          }
+          let name
+          let color
+          let isLast
+          let isLastSrc
+          if (piece) {
+            name = pieceTypeNameMap[piece.pieceType.ident]
+            color = piece.color
+            if (last && last.dst.file === file && last.dst.rank === rank) {
+              isLast = true
+            } else {
+              isLast = false
+            }
+            isLastSrc = false
+          } else {
+            name = ''
+            color = ''
+            isLast = false
+            if (last && last.src && last.src.file === file && last.src.rank === rank) {
+              isLastSrc = true
+            } else {
+              isLastSrc = false
+            }
+          }
+          data.push({
+            name: name,
+            color: color,
+            isLast: isLast,
+            isLastSrc: isLastSrc
+          })
+        }
+      }
+      return data
+    },
+  },
+  methods: {
+    back(event) {
+      this.movelog.back(this.position, 1)
+    },
+    forward(event) {
+      this.movelog.forward(this.position, 1)
+    },
+    at(step) {
+      this.movelog.at(this.position, step)
+    },
+    blackPieces() {
+      const color = shogi.BLACK
+      return [
+        {name: '飛', num: this.position.getInHand(color, shogi.Rook)},
+        {name: '角', num: this.position.getInHand(color, shogi.Bishop)},
+        {name: '金', num: this.position.getInHand(color, shogi.Gold)},
+        {name: '銀', num: this.position.getInHand(color, shogi.Silver)},
+        {name: '桂', num: this.position.getInHand(color, shogi.Knight)},
+        {name: '香', num: this.position.getInHand(color, shogi.Lance)},
+        {name: '歩', num: this.position.getInHand(color, shogi.Pawn)},
+      ]
+    },
+    whitePieces() {
+      const color = shogi.WHITE
+      return [
+        {name: '飛', num: this.position.getInHand(color, shogi.Rook)},
+        {name: '角', num: this.position.getInHand(color, shogi.Bishop)},
+        {name: '金', num: this.position.getInHand(color, shogi.Gold)},
+        {name: '銀', num: this.position.getInHand(color, shogi.Silver)},
+        {name: '桂', num: this.position.getInHand(color, shogi.Knight)},
+        {name: '香', num: this.position.getInHand(color, shogi.Lance)},
+        {name: '歩', num: this.position.getInHand(color, shogi.Pawn)},
+      ]
+    }
+  },
+  watch: {
+    sfen(val) {
+      this.position = sfen.parse(val)
+    },
+    kif(val) {
+      this.movelog.load(psn.decoder(val))
+      this.movelog.normalize(this.position)
+      this.movelog.at(this.position, 0)
+    },
+  },
+  created() {
+    this.sfen = sfen.STARTPOS
+    this.kif = ''
+    this.position = sfen.parse(sfen.STARTPOS)
+    this.movelog = new shogi.Movelog()
+  }
+})
+</script>
+</body>
+</html>

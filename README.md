@@ -1,0 +1,1 @@
+# shogi-view
