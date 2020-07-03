@@ -599,6 +599,7 @@ new Vue({
       this.position = sfen.parse(val)
     },
     kif(val) {
+      this.movelog.at(this.position, 0)
       try {
         this.movelog.load(mobakif.decoder(val))
         this.movelog.normalize(this.position)
