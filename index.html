@@ -470,6 +470,7 @@ const Movelog = {
 import shogi from './js/shogi.js'
 import sfen from './js/sfen.js'
 import psn from './js/psn.js'
+import mobakif from './js/mobakif.js'
 new Vue({
   el: '#app',
   components: {
@@ -598,8 +599,16 @@ new Vue({
       this.position = sfen.parse(val)
     },
     kif(val) {
-      this.movelog.load(psn.decoder(val))
-      this.movelog.normalize(this.position)
+      try {
+        this.movelog.load(mobakif.decoder(val))
+        this.movelog.normalize(this.position)
+      } catch(e) {
+        try {
+          this.movelog.load(psn.decoder(val))
+          this.movelog.normalize(this.position)
+        } catch(e) {
+        }
+      }
       this.movelog.at(this.position, 0)
     },
   },
