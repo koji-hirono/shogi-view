@@ -356,8 +356,12 @@ const Movelog = {
       } else {
         s += '☖'
       }
-      s += fileName[move.dst.file]
-      s += rankName[move.dst.rank]
+      if (move.dst.same) {
+        s += '同'
+      } else {
+        s += fileName[move.dst.file]
+        s += rankName[move.dst.rank]
+      }
       s += pieceTypeName[move.pieceType.ident]
       if (move.isPromote()) {
         s += '成'

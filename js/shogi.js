@@ -185,6 +185,11 @@ class Coords {
   constructor(file, rank) {
     this.file = file
     this.rank = rank
+    this.same = false
+  }
+
+  equals(x) {
+    return x && this.file == x.file && this.rank && x.rank
   }
 }
 
@@ -321,6 +326,9 @@ class Movelog {
       }
       if (move.dst === SAME) {
         move.dst = prevDst
+      }
+      if (move.dst.equals(prevDst)) {
+        move.dst.same = true
       }
       let piece
       if (move.isDrop()) {
