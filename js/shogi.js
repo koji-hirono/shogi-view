@@ -189,7 +189,7 @@ class Coords {
   }
 
   equals(x) {
-    return x && this.file == x.file && this.rank && x.rank
+    return x && this.file === x.file && this.rank === x.rank
   }
 }
 
@@ -325,7 +325,7 @@ class Movelog {
         continue
       }
       if (move.dst === SAME) {
-        move.dst = prevDst
+        move.dst = new Coords(prevDst.file, prevDst.rank)
       }
       if (move.dst.equals(prevDst)) {
         move.dst.same = true
