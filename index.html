@@ -468,6 +468,9 @@ const Movelog = {
     </div>
     <div class="kif">
       <textarea v-model="kif" cols="50" rows="30"></textarea>
+      <div>
+        <a :href="url">Share</a>
+      </div>
     </div>
   </div>
 </div>
@@ -477,6 +480,7 @@ import shogi from './js/shogi.js'
 import sfen from './js/sfen.js'
 import psn from './js/psn.js'
 import mobakif from './js/mobakif.js'
+import qusi from './js/qusi.js'
 new Vue({
   el: '#app',
   components: {
@@ -491,6 +495,35 @@ new Vue({
     movelog: {}
   },
   computed: {
+    movesUrl() {
+      const ranks = {
+        1:'a', 2:'b', 3:'c', 4:'d', 5:'e', 6:'f', 7:'g', 8:'h', 9:'i'
+      }
+      const s = []
+      for (const move of this.movelog.data) {
+        if (move === null) {
+          continue
+        }
+        let t = ''
+        if (move.isDrop()) {
+          t = move.pieceType.ident
+        } else {
+          t = '' + move.src.file
+          t += ranks[move.src.rank]
+        }
+        t += '' + move.dst.file
+        t += ranks[move.dst.rank]
+        if (move.isPromote()) {
+          t += 'p'
+        }
+        s.push(t)
+      }
+      return s.join('')
+    },
+    url() {
+      const s = this.movesUrl
+      return '?m=' + s
+    },
     title() {
       if (this.step === 0) {
         return '開始局面'
@@ -622,8 +655,15 @@ new Vue({
   created() {
     this.sfen = sfen.STARTPOS
     this.kif = ''
-    this.position = sfen.parse(sfen.STARTPOS)
+    this.position = sfen.parse(this.sfen)
     this.movelog = new shogi.Movelog()
+    const uri = window.location.search.substring(1)
+    const params = new URLSearchParams(uri)
+    const moves = params.get('m')
+    if (moves !== null) {
+      this.movelog.load(qusi.decoder(moves))
+      this.movelog.normalize(this.position)
+    }
   }
 })
 </script>
