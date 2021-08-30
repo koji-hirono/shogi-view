@@ -2,13 +2,24 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Shogi View</title>
 <script src="https://unpkg.com/vue"></script>
+<style>
+* {
+  /*box-sizing: border-box; */
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-size: calc(14px + .5vmin);
+}
+</style>
 </head>
 <body>
 
 <template id="piece">
-  <svg width="30" height="30" viewBox="0 0 30 30">
+  <svg viewBox="0 0 30 30">
     <g :transform="reverse">
       <text x="50%" y="0" font-size="30"
         dominant-baseline="central"
@@ -65,52 +76,61 @@ const Piece = {
 <style>
 .board {
   display: grid;
-  grid-template-columns: repeat(11, max-content);
-  grid-template-rows: repeat(11, max-content);
-}
-.topaxis {
-  grid-area: 1 / 2 / 1 / 10;
-  display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  align-items: center;
-  justify-items: center;
-}
-.rightaxis {
-  grid-area: 2 / 11 / 10 / 11;
-  display: grid;
-  grid-template-rows: repeat(9, 1fr);
-  align-items: center;
-  justify-items: center;
-}
-.bottomaxis {
-  grid-area: 11 / 2 / 11 / 10;
-  display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  align-items: center;
-  justify-items: center;
-}
-.leftaxis {
-  grid-area: 2 / 1 / 10 / 1;
-  display: grid;
-  grid-template-rows: repeat(9, 1fr);
-  align-items: center;
-  justify-items: center;
+  width: min(500px, 100vmin);
+  grid-template-columns: 1.5em repeat(9, 1fr) 1.5em;
+  grid-template-rows: 1.5em repeat(9, 1fr) 1.5em;
 }
 .square {
-  grid-area: 2 / 2 / 10 / 10;
-  display: grid;
-  width: min-content;
-  grid-template-columns: repeat(9, min-content);
-  column-gap: 0px;
-  row-gap: 0px;
-  border: 2px solid #333;
-}
-.item {
-  padding: 5px;
+  padding: 0.25em;
   border: 1px solid #ccc;
 }
+.square:nth-of-type(13),
+.square:nth-of-type(14),
+.square:nth-of-type(15),
+.square:nth-of-type(16),
+.square:nth-of-type(17),
+.square:nth-of-type(18),
+.square:nth-of-type(19),
+.square:nth-of-type(20),
+.square:nth-of-type(21) {
+  border-top: 2px solid #333;
+}
+.square:nth-of-type(101),
+.square:nth-of-type(102),
+.square:nth-of-type(103),
+.square:nth-of-type(104),
+.square:nth-of-type(105),
+.square:nth-of-type(106),
+.square:nth-of-type(107),
+.square:nth-of-type(108),
+.square:nth-of-type(109) {
+  border-bottom: 2px solid #333;
+}
+.square:nth-of-type(13),
+.square:nth-of-type(24),
+.square:nth-of-type(35),
+.square:nth-of-type(46),
+.square:nth-of-type(57),
+.square:nth-of-type(68),
+.square:nth-of-type(79),
+.square:nth-of-type(90),
+.square:nth-of-type(101) {
+  border-left: 2px solid #333;
+}
+.square:nth-of-type(21),
+.square:nth-of-type(32),
+.square:nth-of-type(43),
+.square:nth-of-type(54),
+.square:nth-of-type(65),
+.square:nth-of-type(76),
+.square:nth-of-type(87),
+.square:nth-of-type(98),
+.square:nth-of-type(109) {
+  border-right: 2px solid #333;
+}
 .axis {
-  padding: 5px;
+  margin: auto auto;
+  padding: 0.25em;
 }
 .lastmovesrc {
   background-color: #e0ffff;
@@ -122,32 +142,24 @@ const Piece = {
 
 <template id="square">
   <div class="board">
-    <div v-show="topAxis" class="topaxis">
-      <div v-for="file in fileAxis" class="axis">
-        {{ file }}
-      </div>
+    <div class="axis"></div>
+    <div v-for="file in fileAxis" class="axis">
+      {{ file }}
     </div>
-    <div class="bottomaxis">
-      <div v-for="file in fileAxis" class="axis">
-        <div v-show="bottomAxis">{{ file }}</div>
-      </div>
-    </div>
-    <div class="leftaxis">
-      <div v-for="rank in rankAxis" class="axis">
-        <div v-show="leftAxis">{{ rank }}</div>
-      </div>
-    </div>
-    <div v-show="rightAxis" class="rightaxis">
-      <div v-for="rank in rankAxis" class="axis">
-        {{ rank }}
-      </div>
-    </div>
-    <div class="square">
-      <div v-for="p in position" class="item" :class="p | squareBgClass">
+    <div class="axis"></div>
+    <template v-for="(rank, i) in rankAxis">
+      <div class="axis"></div>
+      <div v-for="p in rankPosition(i)"
+        class="square" :class="p | squareBgClass">
         <piece :name="p.name" :is-reversed="p | isReversed"
           :is-emphasis="p.isLast"></piece>
       </div>
+      <div class="axis">{{ rank }}</div>
+    </template>
+    <div class="axis"></div>
+    <div v-for="file in fileAxis" class="axis">
     </div>
+    <div class="axis"></div>
   </div>
 </template>
 
@@ -166,18 +178,6 @@ const Square = {
     },
     rankAxis() {
       return ['一', '二', '三', '四', '五', '六', '七', '八', '九']
-    },
-    topAxis() {
-      return true
-    },
-    rightAxis() {
-      return true
-    },
-    bottomAxis() {
-      return false
-    },
-    leftAxis() {
-      return false
     }
   },
   filters: {
@@ -192,7 +192,12 @@ const Square = {
       } else {
         return ''
       }
-    },
+    }
+  },
+  methods: {
+    rankPosition(i) {
+      return this.position.slice(i*9, (i+1)*9)
+    }
   }
 }
 </script>
@@ -260,26 +265,21 @@ const InHand = {
   margin: 0;
   padding: 0;
   width: max-content;
-  height: 32rem;
   overflow-y: scroll;
   border: 1px solid #888;
   cursor: pointer;
 }
-
 .movelog table {
   border-collapse: collapse;
 }
-
 .movelog td {
   margin: 0;
-  padding: 5px;
-  font-size: 12pt;
+  padding: 0.15em;
+  font-size: 1.2em;
 }
-
 .step {
   text-align: right;
 }
-
 .selected {
   background-color: #e0ffff;
 }
@@ -303,6 +303,7 @@ const InHand = {
 const Movelog = {
   template: '#movelog',
   props: {
+    scrollMode: Boolean,
     movelog: Object,
     currentStep: Number
   },
@@ -312,7 +313,7 @@ const Movelog = {
     },
     selected(step) {
       if (step === this.currentStep) {
-        if (this.$refs.step) {
+        if (this.scrollMode && this.$refs.step) {
           element = this.$refs.step[this.currentStep]
           element.scrollIntoView({block: 'nearest', inline: 'nearest'})
         }
@@ -379,77 +380,110 @@ const Movelog = {
 </script>
 
 <style>
-.container {
-  display: grid;
-  width: max-content;
-  grid-gap: 1rem;
-  grid-template: "title title title movelog kif"
-  "inhand-left board inhand-right movelog kif"
-  ". controll . movelog kif";
-}
 .title {
-  grid-area: title;
-  justify-self: center;
-  font-size: 16pt;
+  font-size: 1.5em;
+}
+.setting {
+  margin: auto auto;
+  width: max-content;
 }
 .inhand-left {
-  padding-bottom: 12pt;
-  grid-area: inhand-left;
-  align-self: start;
-  font-size: 16pt;
-  writing-mode: vertical-rl;
+  font-size: 1.25em;
 }
 .inhand-right {
-  padding-bottom: 12pt;
-  grid-area: inhand-right;
-  align-self: end;
-  font-size: 16pt;
-  writing-mode: vertical-rl;
+  font-size: 1.25em;
 }
 .board {
-  height: max-content;
-  grid-area: board;
   text-align: center;
   border-collapse: collapse;
 }
-.movelog {
-  grid-area: movelog;
-}
 .control {
-  grid-area: controll;
-  justify-self: center;
+  margin: auto auto;
+  width: max-content;
 }
-.kif {
-  grid-area: kif;
+.movelog {
+  margin: auto auto;
+  height: 6em;
 }
-.step {
-  padding: 5px;
+.current-step {
+  padding: 0.15em;
   display: inline-block;
-  width: 3rem;
+  font-size: 1.25em;
+  width: 3em;
   text-align: center;
 }
 .button {
   margin: 0;
-  padding: 5px;
-  font-size: 14pt;
+  padding: 0.15em;
+  font-size: 1.25em;
   font-weight: bold;
   width: 2em;
   height: 2em;
   text-align: center;
   color: #000;
   background-color: #eee;
-  border-radius: 50%;
-  #border-style: none;
   border: 1px solid #888;
+  border-radius: 50%;
+  /* border-style: none; */
   cursor: pointer;
-  filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(.15em .15em .15em rgba(0, 0, 0, 0.4));
 }
 .button:active {
-  transform: translateY(2px);
+  transform: translateY(.15em);
   filter: none;
 }
-.reversed {
-  transform: rotate(180deg);
+.kif-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media screen and (min-width: 600px) and (min-height: 600px) {
+  body {
+    margin: 1em;
+  }
+  .container {
+    display: grid;
+    width: max-content;
+    grid-gap: 1rem;
+    grid-template: "title title title setting kif"
+      "inhand-left board inhand-right movelog kif"
+      ". controll . movelog kif";
+  }
+  .title {
+    grid-area: title;
+    justify-self: center;
+  }
+  .setting {
+    grid-area: setting;
+  }
+  .inhand-left {
+    grid-area: inhand-left;
+    align-self: start;
+    padding-bottom: 1em;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+  .inhand-right {
+    grid-area: inhand-right;
+    align-self: end;
+    padding-bottom: 1em;
+    writing-mode: vertical-rl;
+  }
+  .board {
+    height: max-content;
+    grid-area: board;
+  }
+  .movelog {
+    grid-area: movelog;
+    height: 32em;
+  }
+  .control {
+    grid-area: controll;
+    justify-self: center;
+  }
+  .kif {
+    grid-area: kif;
+  }
 }
 </style>
 
@@ -457,17 +491,21 @@ const Movelog = {
   <div class="container">
     <!-- div class="title">【{{ title }}】</div -->
     <div class="title"></div>
-    <in-hand class="inhand-left reversed" color="white" :pieces="whitePieces()"></in-hand>
+    <in-hand class="inhand-left" color="white" :pieces="whitePieces()"></in-hand>
     <square class="board" :position="pos"></square>
     <in-hand class="inhand-right" color="black" :pieces="blackPieces()"></in-hand>
-    <movelog class="movelog" :movelog="movelog" :current-step="step" @select="at"></movelog>
     <div class="control">
       <button class="button" @click="back">&lt;</button>
-      <span class="step">{{ step }}</span>
+      <span class="current-step">{{ step }}</span>
       <button class="button" @click="forward">&gt;</button>
     </div>
-    <div class="kif">
-      <textarea v-model="kif" cols="50" rows="30"></textarea>
+    <movelog class="movelog" :scroll-mode="scrollMode" :movelog="movelog" :current-step="step" @select="at"></movelog>
+    <div class="setting">
+      <input v-model="scrollMode" type="checkbox" id="scroll">
+      <label for="scroll">追従</label>
+    </div>
+    <div v-show="kifview" class="kif">
+      <textarea v-model="kif" cols="50" rows="30" class="kif-input"></textarea>
       <div>
         <a :href="url">Share</a>
       </div>
@@ -489,6 +527,8 @@ new Vue({
     Movelog
   },
   data: {
+    scrollMode: false,
+    kifview: true,
     sfen: '',
     kif: '',
     position: {},
@@ -661,6 +701,7 @@ new Vue({
     const params = new URLSearchParams(uri)
     const moves = params.get('m')
     if (moves !== null) {
+      this.kifview = false
       this.movelog.load(qusi.decoder(moves))
       this.movelog.normalize(this.position)
     }
