@@ -76,9 +76,11 @@ const Piece = {
 <style>
 .board {
   display: grid;
-  width: min(500px, 100vmin);
-  grid-template-columns: 1.5em repeat(9, 1fr) 1.5em;
-  grid-template-rows: 1.5em repeat(9, 1fr) 1.5em;
+  /* width: min(500px, 100vmin); */
+  /* height: min(500px, 100vmin); */
+  width: max-content;
+  grid-template-columns: 1.5em repeat(9, min(45px, 9vmin)) 1.5em;
+  grid-template-rows: 1.5em repeat(9, min(45px, 9vmin)) 1.5em;
 }
 .square {
   padding: 0.25em;
@@ -394,11 +396,14 @@ const Movelog = {
   font-size: 1.25em;
 }
 .board {
+  margin: auto auto;
   text-align: center;
   border-collapse: collapse;
 }
 .control {
-  margin: auto auto;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 1em;
   width: max-content;
 }
 .movelog {
