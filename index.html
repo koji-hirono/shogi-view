@@ -161,8 +161,8 @@ const Piece = {
     <template v-for="(rank, i) in rankAxis">
       <div class="axis"></div>
       <div v-for="p in rankPosition(i)"
-        class="square" :class="p | squareBgClass">
-        <piece :name="p.name" :is-reversed="p | isReversed"
+        class="square" :class="squareBgClass(p)">
+        <piece :name="p.name" :is-reversed="isReversed(p)"
           :is-emphasis="p.isLast"></piece>
       </div>
       <div class="axis">{{ rank }}</div>
@@ -191,7 +191,7 @@ const Square = {
       return ['一', '二', '三', '四', '五', '六', '七', '八', '九']
     }
   },
-  filters: {
+  methods: {
     isReversed(p) {
       return p.color == 'white'
     },
@@ -203,9 +203,7 @@ const Square = {
       } else {
         return ''
       }
-    }
-  },
-  methods: {
+    },
     rankPosition(i) {
       return this.position.slice(i*9, (i+1)*9)
     }
@@ -304,7 +302,7 @@ const InHand = {
           :class="selected(step)"
           ref="step">
         <td class="step">{{ step }}</td>
-        <td class="move">{{ move | format }}</td>
+        <td class="move">{{ format(move) }}</td>
       </tr>
     </table>
   </div>
@@ -332,9 +330,7 @@ const Movelog = {
       } else {
         return ''
       }
-    }
-  },
-  filters: {
+    },
     format(move) {
       if (move === null) {
         return '開始局面'
@@ -533,20 +529,21 @@ import sfen from './js/sfen.js'
 import psn from './js/psn.js'
 import mobakif from './js/mobakif.js'
 import qusi from './js/qusi.js'
-new Vue({
-  el: '#app',
+Vue.createApp({
   components: {
     Square,
     InHand,
     Movelog
   },
-  data: {
-    scrollMode: false,
-    kifview: true,
-    sfen: '',
-    kif: '',
-    position: {},
-    movelog: {}
+  data() {
+    return {
+      scrollMode: false,
+      kifview: true,
+      sfen: '',
+      kif: '',
+      position: {},
+      movelog: {}
+    }
   },
   computed: {
     movesUrl() {
@@ -720,7 +717,7 @@ new Vue({
       this.movelog.normalize(this.position)
     }
   }
-})
+}).mount('#app')
 </script>
 </body>
 </html>
